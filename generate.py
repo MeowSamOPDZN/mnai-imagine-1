@@ -82,12 +82,13 @@ def main():
     with torch.no_grad():
         ids = clip_tok([args.prompt] * args.n, padding=True,
                        return_tensors="pt").to(device)
-        text = clip_model.get_text_features(**ids)
-        # newer transformers returns an output object, not a tensor
-        if hasattr(text, "pooled_output"):
-            text = text.pooled_output
-        elif hasattr(text, "text_embeds"):
-            text = text.text_embeds
+        # do not use get_text_features, its return type changed in
+        # newer transformers, go through the text model directly
+        out = clip_model.text_model(**ids)
+        pooled = out.pooler_output
+        if pooled is None:
+            pooled = out.last_hidden_state[:, 0]
+        text = clip_model.text_projection(pooled)
         text = F.normalize(text, dim=-1).to(torch.float32)
 
     x = ddim_sample(model, text, args.cfg, args.steps, device, seed=args.seed)
