@@ -76,6 +76,11 @@ def encode_prompts(clip_model, clip_tok, device):
     with torch.no_grad():
         ids = clip_tok(PROMPTS, padding=True, return_tensors="pt").to(device)
         out = clip_model.get_text_features(**ids)
+        # newer transformers returns an output object, not a tensor
+        if hasattr(out, "pooled_output"):
+            out = out.pooled_output
+        elif hasattr(out, "text_embeds"):
+            out = out.text_embeds
     return F.normalize(out, dim=-1)
 
 
