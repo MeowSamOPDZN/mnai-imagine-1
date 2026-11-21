@@ -1,0 +1,1 @@
+{"architectures":["MNAIImagine1DiT"],"heads":16,"hidden":1024,"image_size":64,"in_channels":3,"layers":13,"mlp":4096,"model_type":"dit","params":249920560,"patch":4,"text_dim":512,"time_dim":256,"timesteps":1000}
