@@ -73,15 +73,16 @@ def q_sample(x0, t, noise, alphas_cumprod):
 
 def encode_prompts(clip_model, clip_tok, device):
     # one CLIP embedding per class, computed once and reused
+    # do not use get_text_features, its return type changed in
+    # newer transformers, go through the text model directly
     with torch.no_grad():
         ids = clip_tok(PROMPTS, padding=True, return_tensors="pt").to(device)
-        out = clip_model.get_text_features(**ids)
-        # newer transformers returns an output object, not a tensor
-        if hasattr(out, "pooled_output"):
-            out = out.pooled_output
-        elif hasattr(out, "text_embeds"):
-            out = out.text_embeds
-    return F.normalize(out, dim=-1)
+        out = clip_model.text_model(**ids)
+        pooled = out.pooler_output
+        if pooled is None:
+            pooled = out.last_hidden_state[:, 0]
+        text = clip_model.text_projection(pooled)
+    return F.normalize(text, dim=-1)
 
 
 def image_stream(smoke=False):
