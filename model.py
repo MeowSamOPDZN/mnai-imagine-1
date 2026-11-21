@@ -40,7 +40,7 @@ def timestep_embedding(t, dim=TIME_DIM, max_period=10000):
     # sinusoidal timesteps, same idea as the original DiT paper
     half = dim // 2
     freqs = torch.exp(
-        -math.log(max_period) * torch.arange(half, dtype=torch.float32) / half
+        -math.log(max_period) * torch.arange(half, dtype=torch.float32, device=t.device) / half
     )
     args = t.float()[:, None] * freqs[None, :]
     return torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
