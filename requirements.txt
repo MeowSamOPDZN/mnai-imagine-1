@@ -1,0 +1,10 @@
+torch>=2.4
+torchvision>=0.19
+transformers>=4.44
+datasets>=2.20
+accelerate>=0.33
+safetensors>=0.4
+bitsandbytes>=0.43
+tqdm>=4.66
+numpy>=1.26
+Pillow>=10.0
