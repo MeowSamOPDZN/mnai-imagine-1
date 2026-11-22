@@ -16,6 +16,9 @@ Usage, Colab T4:
   python train.py --out out-im1 --max-images 1000000
   python train.py --out out-im1 --resume out-im1/ckpt-500
 
+Kaggle, stop cleanly inside the 12h cap:
+  python train.py --out out-im1 --max-images 1000000 --max-hours 10.5
+
 Smoke test on CPU, no data download. Uses a tiny twin of the same
 block layout for the loop test, full 250M forward is in model.py:
   python train.py --smoke --max-steps 3 --out /tmp/smoke-im1
@@ -55,6 +58,8 @@ def parse_args():
     p.add_argument("--seed", type=int, default=1337)
     p.add_argument("--ckpt-every", type=int, default=500)
     p.add_argument("--log-every", type=int, default=10)
+    p.add_argument("--max-hours", type=float, default=0,
+                   help="stop after this many hours, saving a checkpoint first (Kaggle 12h cap)")
     p.add_argument("--guidance-drop", type=float, default=0.1)
     p.add_argument("--smoke", action="store_true")
     return p.parse_args()
@@ -252,6 +257,13 @@ def main():
                 with open(os.path.join(args.out, "train_log.jsonl"), "a") as f:
                     f.write(json.dumps({"step": step, "images_seen": images_seen,
                                         "time_s": time.time() - t0}) + "\n")
+            if args.max_hours and time.time() - t0 > args.max_hours * 3600:
+                ckpt = os.path.join(args.out, f"ckpt-{step}")
+                if not os.path.exists(os.path.join(ckpt, "model.pt")):
+                    print(f"time limit reached, saving {ckpt}", flush=True)
+                    save_ckpt(model, ckpt, step, images_seen)
+                print(f"stopping at step {step}, time limit {args.max_hours}h reached", flush=True)
+                break
             if args.smoke and step >= 3:
                 print("smoke done, 3 steps ran fine", flush=True)
                 break
